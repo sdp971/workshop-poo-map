@@ -1,8 +1,9 @@
 import Fighter from "./Fighter";
 
-export default class Player extends Fighter {
+export default class Monster extends Fighter {
 
     constructor(x: number, y: number) {
-        super('Player', x, y);
+        super('Monster', x, y);
     }
+
 }
