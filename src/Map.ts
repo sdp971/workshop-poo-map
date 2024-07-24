@@ -2,6 +2,10 @@ import Player from "./Player";
 import InputConsole from "./InputConsole";
 import Monster from "./Monster";
 import Perso from "./Perso";
+import Battle from "./Battle";
+import {randomCoord} from './utils'
+import Boss from "./Boss";
+import Fighter from "./Fighter";
 
 export interface Coord {
     y: number;
@@ -21,6 +25,7 @@ export default class Map {
     // @ts-ignore
     private player: Player
     private monsters: Monster[]
+    private boss: Monster | null
     private input: InputConsole
 
     constructor(map: string) {
@@ -28,6 +33,7 @@ export default class Map {
         this.input = new InputConsole()
         this.monsters = []
         this.player = new Player(6,2)
+        this.boss = null
     }
 
     public play(): void {
@@ -39,12 +45,9 @@ export default class Map {
     }
 
     private initMonsters(): void {
-        const randomBetween = (max: number) => Math.floor(Math.random() * max ) + 1
-        while (this.monsters.length < 3)
+        while (this.monsters.length < 1)
         {
-            const randomY = randomBetween(this._map.length - 1)
-            const randomX = randomBetween(this._map[0].length - 1)
-
+            const [randomY, randomX] = randomCoord(this._map)
             const alreadyMonster = this.getMonsterAt(randomX, randomY)
             if (alreadyMonster === undefined && this._map[randomY][randomX] === ' ')
                 this.monsters.push(new Monster(randomX, randomY))
@@ -66,26 +69,19 @@ export default class Map {
         }
     }
 
-    private async startLoop() {
-        let isExit = true
-        while (isExit)
+    private async startLoop(): Promise<void> {
+        while (true)
         {
             this.display()
             const input = await this.input.read('Tape direction (N, S, E, W), q (quit) : ')
-            if (input === 'q') {
-                isExit = false
-                continue
-            }
+            if (input === 'q')
+                return
             try {
                 const direction = this.convertInput(input)
                 if (this.dirIsFree(this.player, direction)) {
                     this.player.move(direction)
-                    const monster = this.getMonsterAt(this.player.x, this.player.y)
-                    if (monster !== undefined) {
-                        //TODO FIGHT
-                     /*   const battle = new Battle(this.player, monster, this.input)
-                        await battle.start()*/
-                    }
+                    if (await this.battleHandler())
+                        return
                 } else {
                     console.log('You can\'t go there')
                 }
@@ -107,8 +103,9 @@ export default class Map {
                     process.stdout.write('P')
                 } else if (this.getMonsterAt(x, y)) {
                     process.stdout.write('M')
-                }
-                else {
+                } else if (this.boss !== null && this.boss.x === x && this.boss.y === y) {
+                    process.stdout.write('B')
+                } else {
                     process.stdout.write(this._map[y][x]);
                 }
             }
@@ -143,7 +140,43 @@ export default class Map {
                 updateMonster(monster)
             }
         }
+        this.monsters.forEach(updateMonster)
+    }
 
-        this.monsters.forEach(monster => updateMonster(monster))
+    private async startBattle(enemy: Fighter) : Promise<boolean> {
+        const battle = new Battle(this.player, enemy, this.input)
+        await battle.start()
+        if (!this.player.isAlive()) {
+            console.log("YOU LOOSE !!!! NOOB ...")
+            return false
+        }
+        this.monsters = this.monsters.filter(m => m.isAlive())
+        return true
+    }
+
+    private spawnBoss() {
+        const [randomY, randomX] = randomCoord(this._map)
+        if (this._map[randomY][randomX] === ' ') {
+            this.boss = new Boss(randomX, randomY)
+            console.log('THE BOSS IS HERE !!!!')
+        } else {
+            this.spawnBoss()
+        }
+    }
+
+    private async battleHandler(): Promise<boolean> {
+        if (this.boss !== null && this.player.x === this.boss.x && this.player.y === this.boss.y) {
+            const isWin = await this.startBattle(this.boss)
+            if (isWin) console.log('YOU WIN !!!')
+            return true
+        }
+        const monster = this.getMonsterAt(this.player.x, this.player.y)
+        if (monster !== undefined) {
+            await this.startBattle(monster)
+            if (this.monsters.length === 0) {
+                this.spawnBoss()
+            }
+        }
+        return false
     }
 }

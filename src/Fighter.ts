@@ -18,7 +18,7 @@ export default abstract class Fighter extends Perso {
     }
 
     attack(choice: number, enemy: Fighter): void {
-        console.log(`${this.name} attack '${this._attacks[choice]}'`)
+        console.log(`${this.name} attack '${this._attacks[choice].name}'`)
         enemy.getDamage(this._attacks[choice].damage)
     }
 
