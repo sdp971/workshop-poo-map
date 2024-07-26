@@ -1,4 +1,4 @@
-import {Direction} from "./Map";
+import {Direction} from "./Direction";
 
 export default abstract class Perso {
 

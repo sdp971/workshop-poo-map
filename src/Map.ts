@@ -6,18 +6,15 @@ import Battle from "./Battle";
 import {randomCoord} from './utils'
 import Boss from "./Boss";
 import Fighter from "./Fighter";
+import { Direction } from './Direction';
+
 
 export interface Coord {
     y: number;
     x: number;
 }
 
-export enum Direction {
-    NORD,
-    SUD,
-    EST,
-    OUEST
-}
+
 
 export default class Map {
 

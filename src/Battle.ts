@@ -32,7 +32,7 @@ export default class Battle {
         console.log('End of fight....')
     }
 
-    private async selectAttack(): Promise<void> {
+    public async selectAttack(): Promise<void> {
         console.log('== Selection your attack ===')
         this.player.attacks
             .forEach((attack, index) => console.log(`${index + 1} ) -> ${attack.name} (${attack.description})`))
